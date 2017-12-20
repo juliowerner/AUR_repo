@@ -1,0 +1,63 @@
+# $Id$
+# Maintainer: Ronald van Haren <ronald.archlinux.org>
+# Contributor: damir <damir@archlinux.org>
+
+pkgname=netcdf-intel
+pkgver=4.4.1.1
+pkgrel=1
+pkgdesc="network Common Data Form interface for array-oriented data access and corresponding library"
+arch=("i686" "x86_64")
+url="http://www.unidata.ucar.edu/downloads/netcdf/index.jsp"
+depends=('gcc-libs' 'hdf5' 'curl')
+optdepends=('netcdf-fortran: fortran bindings' 'netcdf-cxx: c++ bindings')
+provides=('libnetcdf.so')
+options=('!makeflags')
+license=('custom')
+source=(netcdf-${pkgver}.tar.gz::"https://github.com/Unidata/netcdf-c/archive/v${pkgver}.tar.gz")
+sha256sums=('7f040a0542ed3f6d27f3002b074e509614e18d6c515b2005d1537fec01b24909')
+#source=("http://www.unidata.ucar.edu/downloads/netcdf/ftp/netcdf-${pkgver}.tar.gz")
+# source=("https://github.com/Unidata/netcdf-c/archive/v${pkgver}.tar.gz")
+# sha1sums=('1cae39472930a25d6ab1bdf6af2a0d85d09aedf9')
+
+build() {
+  source /opt/intel/composerxe/linux/bin/compilervars.sh intel64
+  export CC=icc
+  export CXX=icpc
+  export CFLAGS='-O2 -xHost -ip -no-prec-div -static-intel'
+  export CXXFLAGS='-O2 -xHost -ip -no-prec-div -static-intel'
+  export F77=ifort
+  export FC=ifort
+  export F90=ifort
+  export FFLAGS='-O2 -xHost -ip -no-prec-div -static-intel'
+  export CPP='icc -E'
+  export CXXCPP='icpc -E'
+  # cd "${srcdir}"/${pkgname}-${pkgver}
+  cd "${srcdir}/netcdf-c-${pkgver}"
+#  autoreconf -fis
+  ./configure --prefix=/opt/netcdf-intel --enable-shared --enable-netcdf-4 --enable-dap-netcdf
+  make
+}
+
+# As of netcdf-c-4.4.1, all the tests pass except for one; a workaround is to
+# update CFLAGS so no optimization level is used (i.e., remove "-O2"). See
+# https://github.com/Unidata/netcdf-c/issues/244
+# check() {
+#   # cd "${srcdir}"/${pkgname}-${pkgver}
+#   cd "${srcdir}/netcdf-c-${pkgver}"
+#   make check
+# }
+
+package() {
+#  cd "${srcdir}"/${pkgname}-${pkgver}
+  cd "${srcdir}/netcdf-c-${pkgver}"
+
+  install -m755 -d "${pkgdir}"/opt/netcdf-intel/lib
+  install -m755 -d "${pkgdir}"/opt/netcdf-intel/share/man
+  make DESTDIR="${pkgdir}" install
+
+#  install -Dm644 "${srcdir}"/${pkgname}-${pkgver}/COPYRIGHT \
+#    "${pkgdir}"/usr/share/licenses/${pkgname}/COPYRIGHT
+  install -Dm644 "${srcdir}"/netcdf-c-${pkgver}/COPYRIGHT \
+        "${pkgdir}"/usr/share/licenses/${pkgname}/COPYRIGHT
+
+}
